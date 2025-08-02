@@ -1,9 +1,8 @@
 name: Run Solana Bot
 
 on:
-  push:
-    branches:
-      - main
+  schedule:
+    - cron: "*/15 * * * *" # runs every 15 minutes
   workflow_dispatch:
 
 jobs:
@@ -25,4 +24,5 @@ jobs:
       - name: Run bot
         env:
           SOLANA_PRIVATE_KEY: ${{ secrets.SOLANA_PRIVATE_KEY }}
+          SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
         run: python main.py
