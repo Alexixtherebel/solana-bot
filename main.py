@@ -1,52 +1,54 @@
 import os
 from dotenv import load_dotenv
+
+# Solana + Solders libraries
 from solders.keypair import Keypair
 from solders.system_program import TransferParams, transfer
 from solana.rpc.api import Client
+from solana.rpc.types import TxOpts
+from solana.transaction import Transaction
+from solders.pubkey import Pubkey
 
-# Load environment variables
+# Other libraries
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+
 load_dotenv()
 
-# RPC endpoint and private key from .env
-RPC_ENDPOINT = os.getenv("SOLANA_RPC", "https://api.mainnet-beta.solana.com")
+# ENV variables
 PRIVATE_KEY = os.getenv("SOLANA_PRIVATE_KEY")
-RECIPIENT = os.getenv("RECIPIENT_WALLET")
-LAMPORTS = int(float(os.getenv("AMOUNT_SOL", "0.03")) * 1_000_000_000)
+RPC_URL = os.getenv("SOLANA_RPC_URL", "https://api.mainnet-beta.solana.com")
 
 # Initialize Solana client
-client = Client(RPC_ENDPOINT)
+client = Client(RPC_URL)
 
-def load_keypair_from_private_key(private_key_str: str) -> Keypair:
-    """Convert a JSON array string of 64 integers into a Keypair."""
-    import json
-    key_data = json.loads(private_key_str)
-    return Keypair.from_bytes(bytes(key_data))
+# Helper: load keypair from the private key
+def load_keypair_from_env():
+    key_bytes = [int(x) for x in PRIVATE_KEY.strip("[]").split(",")]
+    return Keypair.from_bytes(bytes(key_bytes))
 
-def main():
-    print("Starting Solana bot...")
+# Example: simple transfer function
+def send_sol(destination: str, amount_sol: float):
+    sender = load_keypair_from_env()
+    dest_pubkey = Pubkey.from_string(destination)
 
-    # Load sender keypair
-    keypair = load_keypair_from_private_key(PRIVATE_KEY)
-    sender_pubkey = keypair.pubkey()
-    recipient_pubkey = RECIPIENT
+    lamports = int(amount_sol * 1_000_000_000)
 
-    print(f"Preparing to send {LAMPORTS / 1_000_000_000} SOL from {sender_pubkey} to {recipient_pubkey}")
-
-    # Create transfer transaction
-    params = TransferParams(
-        from_pubkey=sender_pubkey,
-        to_pubkey=recipient_pubkey,
-        lamports=LAMPORTS
+    txn = Transaction().add(
+        transfer(
+            TransferParams(
+                from_pubkey=sender.pubkey(),
+                to_pubkey=dest_pubkey,
+                lamports=lamports,
+            )
+        )
     )
-    txn = transfer(params)
 
-    # Send transaction
-    try:
-        response = client.send_transaction(txn, keypair)
-        print("Transaction sent!")
-        print(response)
-    except Exception as e:
-        print("Error while sending transaction:", str(e))
+    result = client.send_transaction(txn, sender, opts=TxOpts(skip_preflight=True))
+    print("Transaction result:", result)
 
 if __name__ == "__main__":
-    main()
+    print("Bot started successfully! Ready to run actions.")
+    # Example: do something here
+    # send_sol("DESTINATION_WALLET_ADDRESS", 0.01)
