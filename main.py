@@ -1,4 +1,6 @@
 import os
+import time
+from datetime import datetime
 from dotenv import load_dotenv
 
 # Solana + Solders libraries
@@ -13,11 +15,10 @@ from solders.pubkey import Pubkey
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-import time
 
+# Load environment variables
 load_dotenv()
 
-# ENV variables
 PRIVATE_KEY = os.getenv("SOLANA_PRIVATE_KEY")
 RPC_URL = os.getenv("SOLANA_RPC_URL", "https://api.mainnet-beta.solana.com")
 
@@ -49,18 +50,28 @@ def send_sol(destination: str, amount_sol: float):
     result = client.send_transaction(txn, sender, opts=TxOpts(skip_preflight=True))
     print("Transaction result:", result)
 
-if __name__ == "__main__":
-    print("Bot started successfully! Ready to run actions.")
-
-    # ---- TEST BLOCK ----
+# Health check: fetch current slot
+def fetch_slot():
     try:
-        print("Fetching Solana slot as a quick test...")
         slot = client.get_slot()
-        print("Current Solana slot:", slot)
+        return slot
     except Exception as e:
         print("Error fetching slot:", e)
-    # ---------------------
+        return None
 
-    # Keep bot alive briefly (simulate long-running)
-    time.sleep(5)
-    print("Bot test complete.")
+if __name__ == "__main__":
+    print("Bot started successfully! Ready to run actions.")
+    print("Starting automatic loop... (updates every 60 seconds)\n")
+
+    while True:
+        current_time = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+        print(f"[{current_time}] Checking Solana slot...")
+
+        slot = fetch_slot()
+        if slot:
+            print(f"[{current_time}] Current Solana slot: {slot}")
+        else:
+            print(f"[{current_time}] Failed to fetch slot.")
+
+        print("-" * 50)
+        time.sleep(60)  # Wait 60 seconds before the next check
