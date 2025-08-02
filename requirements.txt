@@ -1,10 +1,10 @@
-requests
-beautifulsoup4
+numpy
 pandas
 scikit-learn
-numpy
-solana
-solders
+beautifulsoup4
 aiohttp
-tweepy
 python-dotenv
+requests
+tweepy
+solana==0.30.2
+solders==0.18.1
