@@ -1,45 +1,31 @@
 import os
-import time
-import json
+from solders.keypair import Keypair
 from solana.rpc.api import Client
-from solana.keypair import Keypair
+from solana.transaction import Transaction
+from solana.system_program import TransferParams, transfer
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
-print("=== Solana Bot Started Successfully ===")
-print("Connecting to Solana network...")
+# Connect to Solana
+client = Client("https://api.mainnet-beta.solana.com")
 
-# Connect to Solana devnet (you can switch to mainnet if ready)
-client = Client("https://api.devnet.solana.com")
+# Load private key from environment variable
+private_key_str = os.getenv("SOLANA_PRIVATE_KEY")
+if not private_key_str:
+    raise Exception("SOLANA_PRIVATE_KEY not found in environment variables!")
 
-# Get private key from environment variable
-private_key = os.getenv("SOLANA_PRIVATE_KEY")
+# Convert private key string to list of ints
+private_key = [int(x) for x in private_key_str.split(",")]
+keypair = Keypair.from_bytes(bytes(private_key))
 
-if not private_key:
-    print("ERROR: SOLANA_PRIVATE_KEY is not set.")
-    exit(1)
+print("Bot started successfully! Wallet public key:", keypair.pubkey())
 
-try:
-    # Decode the private key (assuming JSON array format)
-    secret_key = json.loads(private_key)
-    keypair = Keypair.from_secret_key(bytes(secret_key))
-    print("Wallet loaded successfully.")
-except Exception as e:
-    print(f"Failed to load keypair: {e}")
-    exit(1)
+# Example logic: check balance
+balance = client.get_balance(keypair.pubkey())
+print("Current balance:", balance.value)
 
-# Simple example: check SOL balance
-try:
-    balance = client.get_balance(keypair.public_key)
-    print(f"Current wallet balance: {balance['result']['value']} lamports")
-except Exception as e:
-    print(f"Error fetching balance: {e}")
-
-print("Bot is running. Waiting for market signals...")
-
-# Keep the bot running and printing heartbeats
-while True:
-    print("Heartbeat: Bot is alive.")
-    time.sleep(30)
+# Example logic: trade placeholder
+# Replace with your trading logic
+print("Ready to trade with 0.04 SOL per trade...")
