@@ -1,8 +1,8 @@
 import os
-import time
 from dotenv import load_dotenv
+import asyncio
 
-# Solana + Solders
+# Solana + Solders libraries
 from solders.keypair import Keypair
 from solders.system_program import TransferParams, transfer
 from solana.rpc.api import Client
@@ -10,8 +10,13 @@ from solana.rpc.types import TxOpts
 from solana.transaction import Transaction
 from solders.pubkey import Pubkey
 
-# Notifications
+# Other libraries
+import pandas as pd
 import requests
+from bs4 import BeautifulSoup
+
+# Telegram (aiogram)
+from aiogram import Bot
 
 load_dotenv()
 
@@ -21,27 +26,35 @@ RPC_URL = os.getenv("SOLANA_RPC_URL", "https://api.mainnet-beta.solana.com")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
+# Initialize Solana client
 client = Client(RPC_URL)
+bot = Bot(token=TELEGRAM_BOT_TOKEN)
 
-# Telegram notification helper
-def send_telegram(message: str):
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        return
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    try:
-        requests.post(url, json={"chat_id": TELEGRAM_CHAT_ID, "text": message})
-    except Exception as e:
-        print("Failed to send Telegram message:", e)
 
-# Load keypair from ENV
+# Helper: load keypair from the private key
 def load_keypair_from_env():
     key_bytes = [int(x) for x in PRIVATE_KEY.strip("[]").split(",")]
     return Keypair.from_bytes(bytes(key_bytes))
+
+
+# Async function to send Telegram messages
+async def send_telegram_message(text: str):
+    try:
+        await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=text)
+    except Exception as e:
+        print("Failed to send Telegram message:", e)
+
+
+def notify(text: str):
+    # Wrap async call
+    asyncio.run(send_telegram_message(text))
+
 
 # Example: simple transfer function
 def send_sol(destination: str, amount_sol: float):
     sender = load_keypair_from_env()
     dest_pubkey = Pubkey.from_string(destination)
+
     lamports = int(amount_sol * 1_000_000_000)
 
     txn = Transaction().add(
@@ -54,32 +67,27 @@ def send_sol(destination: str, amount_sol: float):
         )
     )
 
-    try:
-        result = client.send_transaction(txn, sender, opts=TxOpts(skip_preflight=True))
-        msg = f"Transaction sent successfully: {result}"
-        print(msg)
-        send_telegram(msg)
-    except Exception as e:
-        err = f"Error sending transaction: {e}"
-        print(err)
-        send_telegram(err)
+    result = client.send_transaction(txn, sender, opts=TxOpts(skip_preflight=True))
+    print("Transaction result:", result)
+    notify(f"Transaction sent!\nResult: {result}")
+
 
 if __name__ == "__main__":
     print("Bot started successfully! Ready to run actions.")
-    send_telegram("🚀 Bot started successfully and is now running.")
+    notify("🚀 Bot started successfully and is ready to run actions.")
 
-    # Main test loop (10 iterations)
-    print("Starting test loop... (updates every 60 seconds)")
-    for i in range(10):
+    # Test: Fetch slot 3 times
+    print("Starting test loop with Telegram notifications for each slot...")
+    for i in range(3):
         try:
             slot = client.get_slot()
-            print(f"[{i+1}/10] Solana slot: {slot}")
+            msg = f"[{i+1}/3] Current Solana slot: {slot}"
+            print(msg)
+            notify(msg)
         except Exception as e:
-            err = f"Error fetching slot: {e}"
-            print(err)
-            send_telegram(err)
-
-        time.sleep(60)
+            error_msg = f"Error fetching slot: {e}"
+            print(error_msg)
+            notify(error_msg)
 
     print("Test loop complete. Bot shutting down.")
-    send_telegram("✅ Test loop complete. Bot shutting down.")
+    notify("✅ Test loop complete. Bot shutting down.")
