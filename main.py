@@ -13,6 +13,7 @@ from solders.pubkey import Pubkey
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+import time
 
 load_dotenv()
 
@@ -50,5 +51,16 @@ def send_sol(destination: str, amount_sol: float):
 
 if __name__ == "__main__":
     print("Bot started successfully! Ready to run actions.")
-    # Example: do something here
-    # send_sol("DESTINATION_WALLET_ADDRESS", 0.01)
+
+    # ---- TEST BLOCK ----
+    try:
+        print("Fetching Solana slot as a quick test...")
+        slot = client.get_slot()
+        print("Current Solana slot:", slot)
+    except Exception as e:
+        print("Error fetching slot:", e)
+    # ---------------------
+
+    # Keep bot alive briefly (simulate long-running)
+    time.sleep(5)
+    print("Bot test complete.")
