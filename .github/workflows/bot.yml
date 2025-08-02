@@ -1,29 +1,27 @@
 name: Run Solana Bot
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: "*/5 * * * *"  # runs every 5 minutes
-  workflow_dispatch:        # allows manual run
+    - cron: '*/5 * * * *'
 
 jobs:
-  run-bot:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
-         - name: Install dependencies
+    - name: Install dependencies
       run: |
-        cd solana-bot
         pip install -r requirements.txt
 
     - name: Run bot
+      env:
+        SOLANA_PRIVATE_KEY: ${{ secrets.SOLANA_PRIVATE_KEY }}
       run: |
-        cd solana-bot
         python main.py
