@@ -1,0 +1,10 @@
+requests
+beautifulsoup4
+pandas
+scikit-learn
+numpy
+solana
+solders
+aiohttp
+tweepy
+python-dotenv
