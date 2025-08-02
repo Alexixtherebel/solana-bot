@@ -1,6 +1,5 @@
 import os
 import time
-from datetime import datetime
 from dotenv import load_dotenv
 
 # Solana + Solders libraries
@@ -16,21 +15,19 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
-# Load environment variables
 load_dotenv()
 
+# ENV variables
 PRIVATE_KEY = os.getenv("SOLANA_PRIVATE_KEY")
 RPC_URL = os.getenv("SOLANA_RPC_URL", "https://api.mainnet-beta.solana.com")
 
 # Initialize Solana client
 client = Client(RPC_URL)
 
-# Helper: load keypair from the private key
 def load_keypair_from_env():
     key_bytes = [int(x) for x in PRIVATE_KEY.strip("[]").split(",")]
     return Keypair.from_bytes(bytes(key_bytes))
 
-# Example: simple transfer function
 def send_sol(destination: str, amount_sol: float):
     sender = load_keypair_from_env()
     dest_pubkey = Pubkey.from_string(destination)
@@ -50,28 +47,19 @@ def send_sol(destination: str, amount_sol: float):
     result = client.send_transaction(txn, sender, opts=TxOpts(skip_preflight=True))
     print("Transaction result:", result)
 
-# Health check: fetch current slot
-def fetch_slot():
-    try:
-        slot = client.get_slot()
-        return slot
-    except Exception as e:
-        print("Error fetching slot:", e)
-        return None
-
 if __name__ == "__main__":
     print("Bot started successfully! Ready to run actions.")
-    print("Starting automatic loop... (updates every 60 seconds)\n")
+    print("Starting test loop... (updates every 60 seconds)\n")
 
-    while True:
-        current_time = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-        print(f"[{current_time}] Checking Solana slot...")
-
-        slot = fetch_slot()
-        if slot:
-            print(f"[{current_time}] Current Solana slot: {slot}")
-        else:
-            print(f"[{current_time}] Failed to fetch slot.")
+    for i in range(10):  # Limit to 10 iterations (10 minutes)
+        try:
+            print(f"[{i+1}/10] Checking Solana slot...")
+            slot = client.get_slot()
+            print("Current Solana slot:", slot)
+        except Exception as e:
+            print("Error fetching slot:", e)
 
         print("-" * 50)
-        time.sleep(60)  # Wait 60 seconds before the next check
+        time.sleep(60)
+
+    print("Test loop complete. Bot shutting down.")
