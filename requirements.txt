@@ -1,10 +1,10 @@
-numpy
+solana==0.30.2
+solders==0.20.0
+requests
+beautifulsoup4
 pandas
 scikit-learn
-beautifulsoup4
+numpy
 aiohttp
-python-dotenv
-requests
 tweepy
-solana==0.30.2
-solders==0.18.1
+python-dotenv
